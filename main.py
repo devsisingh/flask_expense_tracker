@@ -8,11 +8,17 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import inch
 
+from dotenv import load_dotenv
+load_dotenv()
+
 app = Flask(__name__)
 
-# 🔧 Build absolute path
-basedir = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///" + os.path.join(basedir, "expense.db")
+# Use PostgreSQL from environment variable
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://")
+
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -32,9 +38,9 @@ def home():
     searchtext = request.args.get('search')
     if searchtext:
         searchExpenses = Expense.query.filter(or_(
-                Expense.amount.ilike(f"%{searchtext}%"),
+                func.cast(Expense.amount, db.String).ilike(f"%{searchtext}%"),
                 Expense.desc.ilike(f"%{searchtext}%"),
-                Expense.date.ilike(f"%{searchtext}")
+                func.cast(Expense.date, db.String).ilike(f"%{searchtext}%")
             )).all()
         return render_template("index.html", allExpenses = searchExpenses)
     
@@ -91,9 +97,10 @@ def report_summary():
 
 @app.route("/report/monthly")
 def report_monthly():
-    results = db.session.query(func.strftime("%Y-%m",Expense.date).label("month"),
-                               func.sum(Expense.amount).label("total")
-                               ).group_by("month").all()
+    results = db.session.query(
+            func.to_char(Expense.date, 'YYYY-MM').label("month"),
+            func.sum(Expense.amount).label("total")
+        ).group_by("month").order_by("month").all()
     return {
         month:total for month,total in results
     }
@@ -120,7 +127,7 @@ def download_pdf():
 
     # Fetch monthly data
     monthly_results = db.session.query(
-        func.strftime("%Y-%m", Expense.date).label("month"),
+       func.to_char(Expense.date, 'YYYY-MM').label("month"),
         func.sum(Expense.amount).label("total")
     ).group_by("month").order_by("month").all()
 
@@ -165,9 +172,11 @@ def download_pdf():
         mimetype='application/pdf'
     )
 
-# Create the database tables if they do not exist yet
-with app.app_context():
+# Temporary route to initialize the PostgreSQL DB
+@app.route('/setup')
+def setup():
     db.create_all()
+    return "Database tables created successfully! ✅"
 
 if __name__ == '__main__':
     app.run(debug=True)
