@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-info bg-gradient">
+  <a class="navbar-brand" href="/">Home</a>
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  <div class="collapse navbar-collapse" id="navbarSupportedContent">
+    <ul class="navbar-nav mr-auto">
+      <li class="nav-item active">
+        <a class="nav-link" href="/dashboard">Dashboard <span class="sr-only">(current)</span></a>
+      </li>
+    </ul>
+    <form class="form-inline my-2 my-lg-0" action="/" method="GET">
+      <input class="form-control mr-sm-2" type="text" placeholder="Search" name="search" id="search" aria-label="Search">
+      <button class="btn btn-warning bg-gradient my-2 my-sm-0" type="submit">Search</button>
+    </form>
+  </div>
+</nav>
+
+<div class="container">
+    <h2 class="text-center my-4">Expense Dashboard</h2>
+ 
+    <div class="row mb-5">
+        <div class="border p-5 bg-info col text-center text-white">
+            <h5>Total</h5>
+            <h3 id="total"></h3>
+        </div>
+        <div class="border p-5 bg-info col text-center text-white">
+            <h5>Average</h5>
+            <h3 id="avg"></h3>
+        </div>
+        <div class="border p-5 bg-info col text-center text-white">
+            <h5>Max Expense</h5>
+            <h3 id="max"></h3>
+        </div>
+    </div>
+
+<div class="text-center mb-5">
+    <a href="/report/pdf" class="btn btn-success btn-lg">Download Report</a>
+</div>
+ 
+    <canvas id="monthlyChart" width="400" height="200"></canvas>
+ 
+    <script>
+        async function loadData() {
+            // Load summary
+            const summaryRes = await fetch("/report/summary");
+            const summary = await summaryRes.json();
+            document.getElementById("total").innerText = summary.total_spent;
+            document.getElementById("avg").innerText = summary.average_expense;
+            document.getElementById("max").innerText = summary.max_expense;
+ 
+            // Load monthly
+            const monthlyRes = await fetch("/report/monthly");
+            const monthly = await monthlyRes.json();
+ 
+            const labels = Object.keys(monthly);
+            const data = Object.values(monthly);
+ 
+            new Chart(document.getElementById("monthlyChart"), {
+                type: "line",
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: "Monthly Spending",
+                        data: data,
+                        borderColor: "blue",
+                        fill: false
+                    }]
+                }
+            });
+        }
+        loadData();
+    </script>
+
+</div>
+
+</body>
+</html>
