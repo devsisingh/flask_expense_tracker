@@ -3,10 +3,14 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import os
 from sqlalchemy import or_ , func
+
 from io import BytesIO
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import inch
+
+import requests
+from functools import lru_cache
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -84,35 +88,69 @@ def update(sno):
     updateexpense = Expense.query.filter_by(sno=sno).first()
     return render_template("update.html", updateexpense = updateexpense)
 
+
+@lru_cache(maxsize=1)
+def get_exchange_rates(base='INR'):
+    url = f"https://api.exchangerate-api.com/v4/latest/{base}"
+    response = requests.get(url)
+    if response.status_code != 200:
+        raise Exception("Failed to fetch exchange rates.")
+    return response.json()["rates"]
+
+
+def convert_to_inr(amount, currency, rates):
+    if currency.upper() == 'INR':
+        return amount
+    try:
+        rate = rates.get(currency.upper())
+        if rate is None:
+            raise ValueError(f"No exchange rate for {currency}")
+        return amount / rate  # Since base is INR
+    except Exception as e:
+        print(f"Conversion error: {e}")
+        return 0
+
+
 @app.route("/report/summary")
 def report_summary():
-    total = db.session.query(func.sum(Expense.amount)).scalar() or 0
-    avg = db.session.query(func.avg(Expense.amount)).scalar() or 0
-    max_expense = db.session.query(func.max(Expense.amount)).scalar() or 0
+    expenses = Expense.query.all()
+    rates = get_exchange_rates(base='INR')
+
+    converted_amounts = [
+        convert_to_inr(exp.amount, exp.currency, rates) for exp in expenses
+    ]
+
+    total = sum(converted_amounts)
+    avg = total / len(converted_amounts) if converted_amounts else 0
+    max_expense = max(converted_amounts) if converted_amounts else 0
+
     return {
-        "total_spent": total,
+        "total_spent": round(total,2),
         "average_expense": round(avg,2),
-        "max_expense": max_expense
+        "max_expense": round(max_expense,2)
     }
 
 @app.route("/report/monthly")
 def report_monthly():
-    results = db.session.query(
-            func.to_char(Expense.date, 'YYYY-MM').label("month"),
-            func.sum(Expense.amount).label("total")
-        ).group_by("month").order_by("month").all()
-    return {
-        month:total for month,total in results
-    }
+    expenses = Expense.query.all()
+    rates = get_exchange_rates(base='INR')
+
+    monthly_data = {}
+    for exp in expenses:
+        month = exp.date.strftime('%Y-%m')
+        amount_in_inr = convert_to_inr(exp.amount, exp.currency, rates)
+
+        if month not in monthly_data:
+            monthly_data[month] = 0
+        monthly_data[month] += amount_in_inr
+
+    monthly_data = {month: round(total, 2) for month, total in monthly_data.items()}
+
+    return monthly_data
 
 @app.route("/dashboard")
 def dashboard():
     return render_template("dashboard.html")
-
-from io import BytesIO
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.units import inch
 
 @app.route('/report/pdf')
 def download_pdf():
