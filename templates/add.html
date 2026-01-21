@@ -1,21 +1,23 @@
 {% extends 'base.html' %}
 {% block body %}
-<div class="container my-4">
-    <h2>Add an expense</h2>
+<div class="d-flex justify-content-center align-items-center" style="min-height: calc(100vh - 56px)">
+    <div class="w-100" style="max-width: 400px;">
+  <h2>Add an expense</h2>
 <form action="/add-expense" method="POST">
   <div class="form-group">
-    <label for="desc">Description</label>
-    <input type="text" class="form-control" name="desc" id="desc" placeholder="">
+    <label for="desc" class="mt-2">Description</label>
+    <input type="text" class="form-control mt-2" name="desc" id="desc" placeholder="">
   </div>
   <div class="form-group">
-    <label for="amount">Amount</label>
-    <input type="number" step="0.01" class="form-control" name="amount" id="amount" aria-describedby="emailHelp" placeholder="">
+    <label for="amount" class="mt-2">Amount</label>
+    <input type="number" step="0.01" class="form-control mt-2" name="amount" id="amount" aria-describedby="emailHelp" placeholder="">
   </div>
-  <div class="form-group">
-    <label for="currency">Currency</label>
-    <input type="text" class="form-control" name="currency" id="currency" placeholder="">
+  <div class="form-group ">
+    <label for="currency" class="mt-2">Currency</label>
+    <input type="text" class="form-control mt-2" name="currency" id="currency" placeholder="">
   </div>
-  <button type="submit" class="btn btn-info btn-outline-info">Submit</button>
+  <button type="submit" class="btn btn-info mt-2">Submit</button>
 </form>
+</div>
 </div>
 {% endblock body %}

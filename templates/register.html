@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block body %}
+<!-- Full viewport height and flexbox centering -->
+<div class="d-flex justify-content-center align-items-center" style="min-height: calc(100vh - 56px)">
+
+  <!-- A smaller container for the form -->
+  <div class="w-100" style="max-width: 400px;">
+    <h2 class="text-center mb-4">Please Register</h2>
+
+    <form method="POST">
+      <div class="form-floating mb-3 mt-4">
+        <input type="text" class="form-control" id="floatingInput" name="username" value="{{ username|default('') }}"
+        placeholder="Username" required>
+        <label for="floatingInput">Username</label>
+      </div>
+      <div class="form-floating">
+        <input type="password" class="form-control" id="floatingPassword" name="password" placeholder="Password" required>
+        <label for="floatingPassword">Password</label>
+      </div>
+      <button type="submit" class="btn btn-primary mt-3 w-100">Register</button>
+    </form>
+
+  {% if error %}
+  <p style="color: red;" class="mt-2">{{ error }}</p>
+{% endif %}
+
+  </div>
+</div>
+{% endblock body %}

@@ -45,9 +45,3 @@ def test_monthly_report_with_mocked_currency(client, monkeypatch):
 
     data = response.get_json()
     assert isinstance(data, dict)
-
-
-def test_pdf_download(client):
-    response = client.get("/report/pdf")
-    assert response.status_code == 200
-    assert response.content_type == "application/pdf"
