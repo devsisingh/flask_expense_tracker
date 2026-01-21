@@ -32,6 +32,21 @@
           aria-label="Search">
         <button class="btn btn-warning bg-gradient my-2 my-sm-0" type="submit">Search</button>
       </form>
+
+       <!-- User Profile / Auth Links -->
+        <ul class="navbar-nav mb-2 mb-lg-0">
+          {% if current_user.is_authenticated %}
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="profileDropdown"
+               role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <span class="ms-2">{{ current_user.username }}</span>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
+              <li><a class="dropdown-item" href="/logout">Logout</a></li>
+            </ul>
+          </li>
+          {% endif %}
+        </ul>
     </div>
     </div>
   </nav>
